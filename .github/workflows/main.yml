@@ -1,4 +1,3 @@
-
 name: Build MME APK
 
 on:
@@ -10,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,6 +27,14 @@ jobs:
       - name: Extract Android project
         run: unzip -q MME_Android_Project.zip
 
+      - name: Apply latest MME screens and Android printing
+        run: |
+          cp index.html MME_Android_Project/app/src/main/assets/index.html
+          cp MainActivity.java MME_Android_Project/app/src/main/java/com/mme/accounting/MainActivity.java
+          mkdir -p MME_Android_Project/app/src/main/assets/icons
+          cp icon-192.png MME_Android_Project/app/src/main/assets/icons/icon-192.png
+          cp icon-512.png MME_Android_Project/app/src/main/assets/icons/icon-512.png
+
       - name: Build APK
         working-directory: MME_Android_Project
         run: gradle assembleDebug
@@ -36,9 +42,13 @@ jobs:
       - name: Rename APK
         run: cp MME_Android_Project/app/build/outputs/apk/debug/app-debug.apk MME_Accounting.apk
 
+      - name: Verify APK size
+        run: |
+          test -s MME_Accounting.apk
+          ls -lh MME_Accounting.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MME_Accounting
+          name: MME_Accounting_1_2
           path: MME_Accounting.apk
-          
