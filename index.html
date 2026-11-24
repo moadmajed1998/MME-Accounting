@@ -18,7 +18,60 @@ const money=n=>Number(n||0).toLocaleString('en-US')+' ر.ي';const safe=s=>Strin
 function persist(){localStorage.setItem(KEY,JSON.stringify(db));dashboard()}
 function dashboard(){salesSum.textContent=money(db.sales.reduce((a,x)=>a+x.total,0));purchaseSum.textContent=money(db.purchases.reduce((a,x)=>a+x.total,0));itemsCount.textContent=db.items.length;stockSum.textContent=money(db.items.reduce((a,x)=>a+x.qty*x.avgCost,0))}
 function go(p){home.classList.toggle('hidden',p!=='home');work.classList.toggle('hidden',p==='home');if(p==='home'){dashboard();return}heading.textContent=({items:'إدارة الأصناف',sales:'فاتورة مبيعات',purchases:'فاتورة مشتريات',vouchers:'السندات',parties:'العملاء والموردون',reports:'التقارير'})[p];let el=body;if(p==='items')itemsPage(el);if(p==='sales'||p==='purchases')invoicePage(el,p);if(p==='vouchers')voucherPage(el);if(p==='parties')partyPage(el);if(p==='reports')reportPage(el)}
-function itemsPage(el){el.innerHTML=`<h3>إضافة صنف</h3><form id="itemForm"><label>كود الصنف / الباركود</label><input name="code"><label>اسم الصنف</label><input name="name" required><label>التصنيف</label><input name="category"><div class="grid"><div><label>متوسط تكلفة الشراء</label><input name="cost" type="number" min="0" step="any" required></div><div><label>سعر البيع</label><input name="price" type="number" min="0" step="any" required></div><div><label>الكمية الافتتاحية</label><input name="qty" type="number" min="0" step="any" required></div><div><label>حد التنبيه</label><input name="min" type="number" min="0" step="any" value="0"></div></div><button class="gold">حفظ الصنف</button></form><h3>قائمة الأصناف (${db.items.length})</h3><input id="searchItems" placeholder="بحث بالاسم أو الكود"><div id="itemsList"></div>`;const draw=(q='')=>{let a=db.items.filter(x=>(x.name+' '+x.code).toLowerCase().includes(q.toLowerCase()));itemsList.innerHTML=a.length?a.map(x=>`<div class="row"><div><b>${safe(x.name)}</b><div class="muted">${safe(x.code)} · ${safe(x.category)} · المتوفر ${x.qty} · متوسط التكلفة ${money(x.avgCost)}</div></div><div><b>${money(x.price)}</b><div class="actions"><button class="light" onclick="editItem('${x.id}')">تعديل</button><button class="danger" onclick="removeItem('${x.id}')">حذف</button></div></div></div>`).join(''):'<div class="empty">لا توجد أصناف</div>'};searchItems.oninput=e=>draw(e.target.value);draw();itemForm.onsubmit=e=>{e.preventDefault();let d=Object.fromEntries(new FormData(e.target));if(d.code&&db.items.some(x=>x.code===d.code)){alert('الكود مستخدم بالفعل');return}db.items.push({id:String(Date.now()),code:d.code,name:d.name,category:d.category,avgCost:+d.cost,price:+d.price,qty:+d.qty,min:+d.min});persist();itemsPage(el)}}
+
+const MEDICAL_CATALOG=[
+["MED-001","جهاز قياس السكر ياسي Yasee","أجهزة قياس السكر",4000],
+["MED-002","جهاز ضغط إلكتروني أومرون Omron M2","أجهزة قياس الضغط",35000],
+["MED-003","جهاز ضغط إلكتروني يوويل الناطق","أجهزة قياس الضغط",27000],
+["MED-004","جهاز ضغط يدوي يوويل","أجهزة قياس الضغط",6000],
+["MED-005","جهاز ضغط زئبقي مكتبي","أجهزة قياس الضغط",36000],
+["MED-006","جهاز ضغط ألماني Visocor OM60","أجهزة قياس الضغط",26000],
+["MED-007","جهاز ضغط يدوي Kenz الياباني","أجهزة قياس الضغط",17000],
+["MED-008","جهاز ضغط هوائي روز ماكس مع سماعة","أجهزة قياس الضغط",9500],
+["MED-009","شرائط قياس سكر أكرتشيك 50 شريط","مستهلكات السكر",22000],
+["MED-010","جهاز قياس سكر أكيو تشيك أكتيو","أجهزة قياس السكر",22000],
+["MED-011","جهاز قياس سكر رقمي مع 25 شريط","أجهزة قياس السكر",18000],
+["MED-012","ميزان وزن الرضع الرقمي","أجهزة القياس",20000],
+["MED-013","سماعة طبية مزدوجة الرأس","أدوات التشخيص",17000],
+["MED-014","بلص أكسيميتر Pulse Oximeter","أجهزة قياس الأكسجين",5000],
+["MED-015","أوكسيميتر قياس نسبة الأكسجين","أجهزة قياس الأكسجين",15000],
+["MED-016","جهاز نيبولايزر شبكي محمول","أجهزة التنفس",4000],
+["MED-017","أسطوانة أكسجين طبي - سعر ابتدائي","أجهزة الأكسجين",28000],
+["MED-018","منظم أكسجين طبي SHML Y006","أجهزة الأكسجين",13000],
+["MED-019","قناع أكسجين بالبالون","مستهلكات التنفس",1000],
+["MED-020","قناع أكسجين طبي للأسطوانة","مستهلكات التنفس",250],
+["MED-021","قناع نيبولايزر / ماسك جهاز بخار","مستهلكات التنفس",350],
+["MED-022","ترمومتر حرارة للسوائل والزيوت","أجهزة قياس الحرارة",3000],
+["MED-023","حساس فري ستايل ليبري 2 بلس","مستلزمات السكر",27000],
+["MED-024","ثلاجة أنسولين محمولة ومبرد أدوية","حفظ الأدوية",22000],
+["MED-025","إبر قلم أنسولين - 100 حبة","مستهلكات السكر",4000],
+["MED-026","قلم أنسولين نوفوبن 4","مستلزمات السكر",12000],
+["MED-027","ملقط كيلي شرياني منحني","أدوات جراحية",1500],
+["MED-028","ملقط جراحي مسنن","أدوات جراحية",1000],
+["MED-029","جفت كوخر منحني","أدوات جراحية",1800],
+["MED-030","مقص الحبل السري","أدوات جراحية",2000],
+["MED-031","حقيبة معدات طبية للطوارئ","الطوارئ والإسعافات",8000],
+["MED-032","صندوق إسعافات أولية جداري","الطوارئ والإسعافات",6500],
+["MED-033","صندوق أمان للتخلص من الإبر 5 لتر","مستهلكات طبية",500],
+["MED-034","صينية أدوات جراحية بغطاء","أدوات جراحية",2500],
+["MED-035","حاوية أدوات حادة 10 لتر","مستهلكات طبية",1700],
+["MED-036","مخبار مدرج للمختبرات","أدوات مختبرية",2000],
+["MED-037","جهاز قياس درجة حموضة الماء pH Meter","أجهزة مختبرية",7000],
+["MED-038","ميزان تحليلي حساس 0.0001 جم","أجهزة مختبرية",450500],
+["MED-039","أنابيب اختبار زجاجية - سعر القطعة","مستهلكات مختبرية",10],
+["MED-040","رؤوس ماصات صفراء - عبوة 1000","مستهلكات مختبرية",900],
+["MED-041","جهاز فحص جودة المياه 5 في 1","أجهزة مختبرية",14000],
+["MED-042","جهاز هيموجلوبين سالي Sahli","أجهزة مختبرية",3000],
+["MED-043","سرير طبي / معاينة - سعر إعلان مستعمل","أثاث طبي",40000]
+];
+function loadMedicalCatalog(){
+ const seen=new Set(db.items.map(x=>(x.code||"").toUpperCase()));
+ const fresh=MEDICAL_CATALOG.filter(x=>!seen.has(x[0])).map(x=>({id:"cat-"+x[0],code:x[0],name:x[1],category:x[2],avgCost:x[3],price:x[3],qty:0,min:0}));
+ if(!fresh.length){alert("الأصناف الطبية موجودة مسبقاً في القائمة");return}
+ db.items.push(...fresh);persist();alert("تمت إضافة "+fresh.length+" صنفاً طبياً. الأسعار استرشادية ويمكن تعديل تكلفة الشراء وسعر البيع لكل صنف.");go("items");
+}
+
+function itemsPage(el){el.innerHTML=`<div class="hint">يمكنك تحميل قائمة أصناف طبية جاهزة بأسعار استرشادية منشورة في السوق اليمني. راجع السعر الفعلي مع المورد قبل اعتماد البيع أو الشراء.</div><div class="actions"><button class="gold" onclick="loadMedicalCatalog()">＋ تحميل قائمة الأجهزة والأصناف الطبية</button></div><h3>إضافة صنف</h3><form id="itemForm">el.innerHTML=`<h3>إضافة صنف</h3><form id="itemForm"><label>كود الصنف / الباركود</label><input name="code"><label>اسم الصنف</label><input name="name" required><label>التصنيف</label><input name="category"><div class="grid"><div><label>متوسط تكلفة الشراء</label><input name="cost" type="number" min="0" step="any" required></div><div><label>سعر البيع</label><input name="price" type="number" min="0" step="any" required></div><div><label>الكمية الافتتاحية</label><input name="qty" type="number" min="0" step="any" required></div><div><label>حد التنبيه</label><input name="min" type="number" min="0" step="any" value="0"></div></div><button class="gold">حفظ الصنف</button></form><h3>قائمة الأصناف (${db.items.length})</h3><input id="searchItems" placeholder="بحث بالاسم أو الكود"><div id="itemsList"></div>`;const draw=(q='')=>{let a=db.items.filter(x=>(x.name+' '+x.code).toLowerCase().includes(q.toLowerCase()));itemsList.innerHTML=a.length?a.map(x=>`<div class="row"><div><b>${safe(x.name)}</b><div class="muted">${safe(x.code)} · ${safe(x.category)} · المتوفر ${x.qty} · متوسط التكلفة ${money(x.avgCost)}</div></div><div><b>${money(x.price)}</b><div class="actions"><button class="light" onclick="editItem('${x.id}')">تعديل</button><button class="danger" onclick="removeItem('${x.id}')">حذف</button></div></div></div>`).join(''):'<div class="empty">لا توجد أصناف</div>'};searchItems.oninput=e=>draw(e.target.value);draw();itemForm.onsubmit=e=>{e.preventDefault();let d=Object.fromEntries(new FormData(e.target));if(d.code&&db.items.some(x=>x.code===d.code)){alert('الكود مستخدم بالفعل');return}db.items.push({id:String(Date.now()),code:d.code,name:d.name,category:d.category,avgCost:+d.cost,price:+d.price,qty:+d.qty,min:+d.min});persist();itemsPage(el)}}
 function editItem(id){let x=db.items.find(a=>a.id===id);if(!x)return;let name=prompt('اسم الصنف',x.name);if(name===null)return;let price=prompt('سعر البيع',x.price);if(price===null)return;let min=prompt('حد التنبيه',x.min);if(min===null)return;x.name=name;x.price=+price;x.min=+min;persist();go('items')}
 function removeItem(id){if(confirm('حذف الصنف؟')){db.items=db.items.filter(x=>x.id!==id);persist();go('items')}}
 function invoicePage(el,type){let sale=type==='sales',arr=db[type];cart=[];el.innerHTML=`<h3>${sale?'فاتورة مبيعات':'فاتورة مشتريات'}</h3><label>اسم العميل / المورد</label><input id="partyName"><label>الصنف</label><select id="chosenItem"><option value="">اختر الصنف</option>${db.items.map(x=>`<option value="${x.id}">${safe(x.name)} — متوفر ${x.qty}</option>`).join('')}</select><div class="grid"><div><label>الكمية</label><input id="lineQty" type="number" min=".01" step="any" value="1"></div><div><label>سعر الوحدة</label><input id="linePrice" type="number" min="0" step="any"></div></div><button class="light" onclick="addLine('${type}')">إضافة الصنف للفاتورة</button><div id="cartView"></div><div class="row"><b>الإجمالي</b><b id="cartTotal">0</b></div><button class="gold" onclick="commitInvoice('${type}')">حفظ الفاتورة</button><h3>الفواتير السابقة</h3>${arr.slice().reverse().map(x=>`<div class="row"><span>${safe(x.no)} · ${safe(x.party)}</span><b>${money(x.total)}</b><button class="light" onclick="printRecord('${type}','${x.id}')">طباعة</button></div>`).join('')||'<div class="empty">لا توجد فواتير</div>'}`;chosenItem.onchange=()=>{let x=db.items.find(a=>a.id===chosenItem.value);linePrice.value=x?(sale?x.price:x.avgCost):''}}
