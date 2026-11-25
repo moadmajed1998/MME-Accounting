@@ -1,4 +1,4 @@
-const CACHE_NAME = "mme-shell-v2";
+const CACHE_NAME = "mme-shell-v3";
 const APP_FILES = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
