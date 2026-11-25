@@ -50,5 +50,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MME_Accounting_1_2
+          name: MME_Accounting_1_3
           path: MME_Accounting.apk
